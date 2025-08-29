@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant Teacher as 教师
+    participant Frontend as 前端 (Next.js)
+    participant Backend as 后端API (FastAPI)
+    participant Worker as 后台任务处理器
+
+    Teacher->>Frontend: 1. 上传音频文件
+    Frontend->>Backend: 2. POST /evaluate/session (含音频路径)
+    Backend->>Backend: 3. 在SQLite中创建任务(状态: PENDING)
+    Backend-->>Frontend: 4. 立即返回 { task_id }
+    
+    par 并行处理
+        Frontend->>Frontend: 5. 启动轮询<br>(使用TanStack Query)
+        loop 每隔数秒
+            Frontend->>Backend: 6. GET /evaluate/status/{task_id}
+            Backend-->>Frontend: 7. 返回任务状态 (PENDING/COMPLETED)
+        end
+    and
+        Worker->>Backend: 8. 从数据库获取PENDING任务
+        Worker->>Worker: 9. <b>[RAG]</b> 从QuestionBank检索标准问答
+        Worker->>AssemblyAI: 10. 提交音频进行ASR转写
+        AssemblyAI-->>Worker: 11. 返回带词级别时间戳的文本
+        Worker->>Google Gemini: 12. 构造Prompt, 提交转写文本和标准答案
+        Google Gemini-->>Worker: 13. 返回<b>诊断报告JSON</b>
+        Worker->>Backend: 14. 解析验证JSON, 存入数据库<br>并更新任务状态为COMPLETED
+    end
+
+    Note over Frontend: 轮询获取到COMPLETED状态和报告数据
+    Frontend->>Teacher: 15. 在看板上展示评测结果
