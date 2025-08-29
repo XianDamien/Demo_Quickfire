@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, RefreshCw, Filter, Users, Clock, CheckCircle } from 'lucide-react'
+import { Download, RefreshCw, Filter, Users, Clock, CheckCircle, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useEvaluationStore } from '@/store/evaluation-store'
@@ -44,6 +44,25 @@ export function DashboardHeader() {
     refetch()
   }
 
+  const handleImportAudio = () => {
+    // 创建文件输入元素
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'audio/*,video/*'
+    input.multiple = true
+    
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files
+      if (files && files.length > 0) {
+        // 这里将来要实现上传到后端API的逻辑
+        console.log('选择的音/视频文件:', Array.from(files).map(f => f.name))
+        alert(`已选择 ${files.length} 个音/视频文件，后续将实现上传功能`)
+      }
+    }
+    
+    input.click()
+  }
+
   const gradeOptions: Array<{ value: GradeType | 'ALL', label: string, color: string }> = [
     { value: 'ALL', label: '全部', color: 'bg-gray-100 text-gray-700' },
     { value: 'C', label: 'C级', color: 'bg-red-100 text-red-700' },
@@ -72,6 +91,16 @@ export function DashboardHeader() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleImportAudio}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              导入音/视频
+            </Button>
+            
             <Button
               variant="outline"
               size="sm"

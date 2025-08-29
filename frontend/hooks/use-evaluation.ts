@@ -109,11 +109,23 @@ export function useCreateEvaluation() {
 // 提交教师反馈
 export function useSubmitFeedback() {
   const queryClient = useQueryClient()
-  const { setError } = useEvaluationStore()
+  const { setError, updateTask, getTaskById } = useEvaluationStore()
   
   return useMutation({
     mutationFn: (feedback: TeacherFeedback) => api.submitTeacherFeedback(feedback),
     onSuccess: (_, variables) => {
+      // 更新本地store中的任务结果
+      const currentTask = getTaskById(variables.task_id)
+      if (currentTask && currentTask.result) {
+        updateTask(variables.task_id, {
+          result: {
+            ...currentTask.result,
+            final_grade_suggestion: variables.final_grade,
+            ai_summary_comment: variables.teacher_comment
+          }
+        })
+      }
+      
       // 刷新相关缓存
       queryClient.invalidateQueries({ 
         queryKey: evaluationKeys.task(variables.task_id) 
@@ -124,6 +136,46 @@ export function useSubmitFeedback() {
     },
     onError: (error: Error) => {
       setError(`提交反馈失败: ${error.message}`)
+    }
+  })
+}
+
+// 教师批准评测结果
+export function useApproveTask() {
+  const queryClient = useQueryClient()
+  const { setError, updateTask, getTaskById } = useEvaluationStore()
+  
+  return useMutation({
+    mutationFn: ({ taskId, finalGrade, teacherComment }: { taskId: string; finalGrade: string; teacherComment: string }) => 
+      api.approveTask(taskId, finalGrade, teacherComment),
+    onSuccess: (response, variables) => {
+      // 更新本地store中的任务状态和结果
+      const currentTask = getTaskById(variables.taskId)
+      if (currentTask && currentTask.result) {
+        updateTask(variables.taskId, {
+          status: 'COMPLETED',
+          result: {
+            ...currentTask.result,
+            approved_at: response.approved_at,
+            final_grade_suggestion: variables.finalGrade,
+            teacher_comment: variables.teacherComment
+          }
+        })
+      }
+      
+      // 刷新相关缓存
+      queryClient.invalidateQueries({ 
+        queryKey: evaluationKeys.task(variables.taskId) 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: evaluationKeys.report(variables.taskId) 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: evaluationKeys.tasks() 
+      })
+    },
+    onError: (error: Error) => {
+      setError(`批准任务失败: ${error.message}`)
     }
   })
 }

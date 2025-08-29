@@ -114,6 +114,23 @@ export const api = {
     })
   },
 
+  // 教师批准评测结果
+  async approveTask(taskId: string, finalGrade: string, teacherComment: string): Promise<{ success: boolean; approved_at: string }> {
+    if (USE_MOCK_DATA) {
+      await delay(500)
+      console.log('Mock: Approved task:', taskId)
+      return { success: true, approved_at: new Date().toISOString() }
+    }
+    return fetchApi<{ success: boolean; approved_at: string }>(`/evaluate/task/${taskId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({
+        task_id: taskId,
+        final_grade: finalGrade,
+        teacher_comment: teacherComment,
+      }),
+    })
+  },
+
   // 批量导出结果
   async exportResults(taskIds: string[]): Promise<Blob> {
     const response = await fetch(`${API_BASE_URL}/evaluate/export`, {

@@ -109,9 +109,9 @@ def process_evaluation_task(task_id: int, db: Session):
 
         # 5. 结果存储: 更新数据库
         task.result = report_data
-        task.status = models.TaskStatus.COMPLETED
+        task.status = models.TaskStatus.AWAITING_TEACHER_REVIEW
         db.commit()
-        print(f"[Completed] Task {task.id} for student {task.student_id} finished successfully.")
+        print(f"[Awaiting Review] Task {task.id} for student {task.student_id} finished AI evaluation, awaiting teacher review.")
 
     except Exception as e:
         # 错误处理

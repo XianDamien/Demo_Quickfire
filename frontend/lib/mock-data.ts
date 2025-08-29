@@ -58,7 +58,7 @@ export const MOCK_REPORTS: ReportData[] = [
         start_time: 1000,
         end_time: 2500,
         issue_type: "INCOMPLETE_AND_EXTRA_WORD",
-        explanation: "回答不完整且有多余词汇：遗漏了词性'行为动词'，并添加了'听起来'。"
+        explanation: "回答不完整或有多余词汇：遗漏了词性'行为动词'，并添加了'听起来'。"
       }
     ],
     status: 'COMPLETED',

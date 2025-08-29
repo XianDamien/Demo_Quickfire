@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 from ..db import models
 from ..db.database import get_db
@@ -24,6 +25,16 @@ class TaskStatusResponse(BaseModel):
     task_id: int
     status: models.TaskStatus
     result: Optional[dict]
+
+class TeacherApprovalRequest(BaseModel):
+    task_id: int
+    final_grade: str
+    teacher_comment: str
+
+class TeacherApprovalResponse(BaseModel):
+    task_id: int
+    status: models.TaskStatus
+    approved_at: datetime
 
 @router.post("/evaluate/session", response_model=EvaluationResponse, status_code=202)
 async def create_evaluation_session(
@@ -67,4 +78,35 @@ async def get_task_status(task_id: int, db: Session = Depends(get_db)):
         "task_id": task.id,
         "status": task.status,
         "result": task.result
+    }
+
+@router.post("/evaluate/task/{task_id}/approve", response_model=TeacherApprovalResponse)
+async def approve_task(
+    task_id: int,
+    request: TeacherApprovalRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    教师批准评测结果，将任务状态从AWAITING_TEACHER_REVIEW改为COMPLETED。
+    """
+    task = db.query(models.EvaluationTask).filter(models.EvaluationTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.status != models.TaskStatus.AWAITING_TEACHER_REVIEW:
+        raise HTTPException(status_code=400, detail="Task is not awaiting teacher review")
+    
+    # 更新任务状态和结果
+    if task.result:
+        task.result["approved_at"] = datetime.utcnow().isoformat()
+        task.result["final_grade_suggestion"] = request.final_grade
+        task.result["teacher_comment"] = request.teacher_comment
+    
+    task.status = models.TaskStatus.COMPLETED
+    db.commit()
+    
+    return {
+        "task_id": task.id,
+        "status": task.status,
+        "approved_at": datetime.utcnow()
     }

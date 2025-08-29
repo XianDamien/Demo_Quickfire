@@ -8,6 +8,7 @@ from .database import Base
 class TaskStatus(enum.Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
+    AWAITING_TEACHER_REVIEW = "AWAITING_TEACHER_REVIEW"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 

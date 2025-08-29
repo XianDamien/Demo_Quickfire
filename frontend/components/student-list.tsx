@@ -61,7 +61,7 @@ function StudentCard({ task, isSelected, isExpanded, onSelect, onToggleExpansion
   return (
     <Card className={cn(
       "transition-all duration-200 cursor-pointer hover:shadow-md",
-      isSelected && "ring-2 ring-blue-500 shadow-md",
+      isSelected && "border-2 border-blue-400 bg-blue-50 shadow-md",
       task.status === 'COMPLETED' && report?.final_grade_suggestion === 'C' && "border-red-200 bg-red-50"
     )}>
       <CardContent className="p-4">

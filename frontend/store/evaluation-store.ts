@@ -138,7 +138,9 @@ export const useEvaluationStore = create<EvaluationState>()(
       },
       
       getCompletedTasksCount: () => {
-        return get().tasks.filter(task => task.status === 'COMPLETED').length
+        return get().tasks.filter(task => 
+          task.status === 'COMPLETED' && task.result?.approved_at
+        ).length
       }
     }),
     {

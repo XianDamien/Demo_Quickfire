@@ -1,4 +1,4 @@
-// File: D:\LanProject\quick_fire\Demo_Quickfire\frontend\app\layout.tsx
+// File: D:\LanProject\Demo_Quickfire\frontend\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

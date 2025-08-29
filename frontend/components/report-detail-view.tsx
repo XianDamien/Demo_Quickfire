@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Play, Pause, SkipBack, SkipForward, Volume2, Save, Edit3 } from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, Save, CheckCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
@@ -146,36 +146,19 @@ function AudioPlayer({ audioUrl, onSeek }: AudioPlayerProps) {
         </Button>
       </div>
 
-      {/* 音量控制 */}
-      <div className="flex items-center gap-2">
-        <Volume2 className="h-4 w-4 text-gray-500" />
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={volume}
-          onChange={(e) => {
-            const newVolume = parseFloat(e.target.value)
-            setVolume(newVolume)
-            if (audioRef.current) {
-              audioRef.current.volume = newVolume
-            }
-          }}
-          className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
+
     </div>
   )
 }
 
 interface TranscriptionViewProps {
+  audioUrl: string
   transcription: string
   annotations: Annotation[]
   onAnnotationClick: (annotation: Annotation) => void
 }
 
-function TranscriptionView({ transcription, annotations, onAnnotationClick }: TranscriptionViewProps) {
+function TranscriptionView({ audioUrl, transcription, annotations, onAnnotationClick }: TranscriptionViewProps) {
   // 创建带高亮的转写文本
   const createHighlightedText = () => {
     let result = transcription
@@ -244,37 +227,45 @@ function TranscriptionView({ transcription, annotations, onAnnotationClick }: Tr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">完整转写文本</CardTitle>
+        <CardTitle className="text-lg">学生录音与转写文本</CardTitle>
         <CardDescription>
-          点击高亮部分可跳转至音频对应位置。颜色表示不同的问题类型。
+          播放录音，点击高亮文本可跳转至音频对应位置。
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-base leading-relaxed whitespace-pre-wrap">
-            {createHighlightedText()}
-          </p>
+        {/* 音频播放器 */}
+        <div className="mb-3">
+          <AudioPlayer audioUrl={audioUrl} />
         </div>
-        
-        {/* 图例 */}
-        <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-          <p className="text-sm font-medium text-blue-800 mb-2">问题类型说明:</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-200 rounded"></div>
-              <span>发音/意思错误</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-200 rounded"></div>
-              <span>回答不完整</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-orange-200 rounded"></div>
-              <span>口齿不清</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-200 rounded"></div>
-              <span>自我纠正</span>
+
+        {/* 分割线和转写文本 */}
+        <div className="border-t border-gray-200 pt-3">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-base leading-relaxed whitespace-pre-wrap">
+              {createHighlightedText()}
+            </p>
+          </div>
+          
+          {/* 紧凑图例 */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-gray-600">高亮颜色:</span>
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-200 rounded"></div>
+                <span>错误</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-yellow-200 rounded"></div>
+                <span>不完整</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-orange-200 rounded"></div>
+                <span>不清</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-200 rounded"></div>
+                <span>纠正</span>
+              </div>
             </div>
           </div>
         </div>
@@ -326,32 +317,28 @@ function AnnotationList({ annotations, onAnnotationClick }: AnnotationListProps)
             <h4 className="font-medium text-red-700 mb-2">
               严重问题 ({hardErrors.length}个)
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {hardErrors.map((annotation, index) => (
                 <div
                   key={`hard-${index}`}
                   onClick={() => onAnnotationClick(annotation)}
-                  className="p-3 border border-red-200 rounded-lg cursor-pointer hover:bg-red-50 transition-colors"
+                  className="flex items-center justify-between p-2 border border-red-200 rounded cursor-pointer hover:bg-red-50 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "px-2 py-1 text-xs font-medium rounded border",
-                        getIssueTypeColor(annotation.issue_type)
-                      )}>
-                        {getIssueTypeLabel(annotation.issue_type)}
-                      </span>
-                      <span className="font-medium">题目: &quot;{annotation.question}&quot;</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {formatTimestamp(annotation.start_time)}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-red-600 font-medium text-sm">{index + 1}.</span>
+                    <span className={cn(
+                      "px-1.5 py-0.5 text-xs font-medium rounded border",
+                      getIssueTypeColor(annotation.issue_type)
+                    )}>
+                      {getIssueTypeLabel(annotation.issue_type)}
+                    </span>
+                    <span className="text-sm text-gray-700 truncate">
+                      &quot;{annotation.detected_text}&quot;
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-1">{annotation.explanation}</p>
-                  <div className="text-xs text-gray-600">
-                    <span className="font-medium">学生回答:</span> &quot;{annotation.detected_text}&quot; | 
-                    <span className="font-medium ml-1">标准答案:</span> &quot;{annotation.expected_answer}&quot;
-                  </div>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {formatTimestamp(annotation.start_time)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -364,32 +351,28 @@ function AnnotationList({ annotations, onAnnotationClick }: AnnotationListProps)
             <h4 className="font-medium text-orange-700 mb-2">
               观察点 ({softFlags.length}个)
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {softFlags.map((annotation, index) => (
                 <div
                   key={`soft-${index}`}
                   onClick={() => onAnnotationClick(annotation)}
-                  className="p-3 border border-orange-200 rounded-lg cursor-pointer hover:bg-orange-50 transition-colors"
+                  className="flex items-center justify-between p-2 border border-orange-200 rounded cursor-pointer hover:bg-orange-50 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "px-2 py-1 text-xs font-medium rounded border",
-                        getIssueTypeColor(annotation.issue_type)
-                      )}>
-                        {getIssueTypeLabel(annotation.issue_type)}
-                      </span>
-                      <span className="font-medium">题目: &quot;{annotation.question}&quot;</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {formatTimestamp(annotation.start_time)}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-orange-600 font-medium text-sm">{hardErrors.length + index + 1}.</span>
+                    <span className={cn(
+                      "px-1.5 py-0.5 text-xs font-medium rounded border",
+                      getIssueTypeColor(annotation.issue_type)
+                    )}>
+                      {getIssueTypeLabel(annotation.issue_type)}
+                    </span>
+                    <span className="text-sm text-gray-700 truncate">
+                      &quot;{annotation.detected_text}&quot;
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-1">{annotation.explanation}</p>
-                  <div className="text-xs text-gray-600">
-                    <span className="font-medium">学生回答:</span> &quot;{annotation.detected_text}&quot; | 
-                    <span className="font-medium ml-1">标准答案:</span> &quot;{annotation.expected_answer}&quot;
-                  </div>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {formatTimestamp(annotation.start_time)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -409,7 +392,7 @@ interface TeacherFeedbackFormProps {
 function TeacherFeedbackForm({ taskId, initialGrade, initialComment }: TeacherFeedbackFormProps) {
   const [grade, setGrade] = useState<GradeType>(initialGrade)
   const [comment, setComment] = useState(initialComment)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
   
   const submitFeedback = useSubmitFeedback()
 
@@ -423,8 +406,9 @@ function TeacherFeedbackForm({ taskId, initialGrade, initialComment }: TeacherFe
       approved_at: new Date().toISOString()
     }, {
       onSuccess: () => {
-        setIsEditing(false)
-        alert('反馈提交成功！')
+        setIsSaved(true)
+        // 3秒后重置保存状态，允许再次编辑
+        setTimeout(() => setIsSaved(false), 3000)
       }
     })
   }
@@ -437,15 +421,12 @@ function TeacherFeedbackForm({ taskId, initialGrade, initialComment }: TeacherFe
             <CardTitle className="text-lg">教师综合评语</CardTitle>
             <CardDescription>复核AI建议，并给出最终评定</CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-            className="flex items-center gap-2"
-          >
-            <Edit3 className="h-4 w-4" />
-            {isEditing ? '取消编辑' : '编辑'}
-          </Button>
+          {isSaved && (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">已保存</span>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -460,14 +441,12 @@ function TeacherFeedbackForm({ taskId, initialGrade, initialComment }: TeacherFe
                 <button
                   key={gradeOption}
                   type="button"
-                  disabled={!isEditing}
                   onClick={() => setGrade(gradeOption)}
                   className={cn(
                     "px-4 py-2 rounded border font-medium transition-colors",
                     grade === gradeOption
                       ? "bg-blue-500 text-white border-blue-500"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50",
-                    !isEditing && "opacity-60"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   )}
                 >
                   {gradeOption}级
@@ -485,41 +464,32 @@ function TeacherFeedbackForm({ taskId, initialGrade, initialComment }: TeacherFe
               id="teacher-comment"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              disabled={!isEditing}
               rows={4}
-              className={cn(
-                "w-full p-3 border border-gray-300 rounded-lg resize-none",
-                isEditing ? "bg-white" : "bg-gray-50",
-                !isEditing && "cursor-default"
-              )}
+              className="w-full p-3 border border-gray-300 rounded-lg resize-none bg-white"
               placeholder="请输入您的评语..."
             />
           </div>
 
           {/* 提交按钮 */}
-          {isEditing && (
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                disabled={submitFeedback.isPending}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {submitFeedback.isPending ? '提交中...' : '确认并保存'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setGrade(initialGrade)
-                  setComment(initialComment)
-                  setIsEditing(false)
-                }}
-              >
-                重置
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              disabled={submitFeedback.isPending || isSaved}
+              className="flex items-center gap-2"
+            >
+              {isSaved ? (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  已保存
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  {submitFeedback.isPending ? '保存中...' : '保存反馈'}
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -569,7 +539,7 @@ export function ReportDetailView({ taskId }: ReportDetailViewProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 学生信息头部 */}
       <Card>
         <CardHeader>
@@ -592,19 +562,9 @@ export function ReportDetailView({ taskId }: ReportDetailViewProps) {
         </CardHeader>
       </Card>
 
-      {/* 音频播放器 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">学生录音</CardTitle>
-          <CardDescription>使用播放控件收听录音，或点击问题点直接跳转</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AudioPlayer audioUrl={report.audio_url} />
-        </CardContent>
-      </Card>
-
-      {/* 转写文本 */}
+      {/* 合并后的录音与转写 */}
       <TranscriptionView
+        audioUrl={report.audio_url}
         transcription={report.full_transcription}
         annotations={report.annotations}
         onAnnotationClick={handleAnnotationClick}

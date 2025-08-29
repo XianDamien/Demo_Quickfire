@@ -11,7 +11,7 @@ export type IssueType =
 
 export type GradeType = 'A' | 'B' | 'C'
 
-export type TaskStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+export type TaskStatus = 'PENDING' | 'PROCESSING' | 'AWAITING_TEACHER_REVIEW' | 'COMPLETED' | 'FAILED'
 
 export interface Annotation {
   card_index: number
@@ -37,6 +37,7 @@ export interface ReportData {
   full_transcription: string
   annotations: Annotation[]
   status: TaskStatus
+  approved_at?: string
   created_at?: string
   updated_at?: string
 }
